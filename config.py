@@ -7,6 +7,7 @@ TG_CHANNEL_ID = os.environ.get("TG_CHANNEL_ID", "@superxp")
 
 # E-hentai
 EX_COOKIES = os.environ.get("EX_COOKIES", "<THIS IS YOUR EXHENTAI COOKIES>")
+DOWNLOAD_THREAD_NUMBER = 5
 
 # Telegra.ph
 AURHOR_NAME = os.environ.get("AURHOR_NAME", "XP百科全书")

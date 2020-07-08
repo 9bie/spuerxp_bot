@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-import requests
 import json
+import traceback
+import requests
 from telebot import types
 from . import bot, config
 from .exhentai import *
@@ -25,28 +26,30 @@ def handle_url(message):
         bot.reply_to(message, f"您不是管理员[CHAT_ID: {message.from_user.id}]")
         return 
     
-    m = bot.reply_to(message, "正在处理ExHentai链接...")
+    m = bot.reply_to(message, "正在解析链接...")
     ex_link = re.search("https:\/\/exhentai\.org\/g\/\d+\/[a-z0-9]+\/", message.text).group(0)
+    ex = Exhentai(ex_link)
     try:
-        title, imgs = get_galley_info(ex_link)
+        title, img_cnt = ex.info()
     except Exception as e:
-        bot.edit_message_text(f"获取信息失败!\n{e}", chat_id=m.chat.id, message_id=m.message_id)
-        return 
-    
-    bot.edit_message_text(f"{title}\n共 {len(imgs)} 页\n正在下载图片...", chat_id=m.chat.id, message_id=m.message_id)
-    imgs_raw = []
+        traceback.print_exc()
+        bot.edit_message_text(f"解析链接失败!\n{e}", chat_id=m.chat.id, message_id=m.message_id)
+
+    bot.edit_message_text(f"{title}\n共 {img_cnt} 张\n正在下载图片...", chat_id=m.chat.id, message_id=m.message_id)
     try:
-        for img_url in imgs:
-            imgs_raw.append(download_image(img_url))
+        imgs = ex.start_download()
+        assert imgs
     except Exception as e:
+        traceback.print_exc()
         bot.edit_message_text(f"下载图片失败!\n{e}", chat_id=m.chat.id, message_id=m.message_id)
         return 
     
     bot.edit_message_text(f"图片下载成功，正在上传...", chat_id=m.chat.id, message_id=m.message_id)
     try:
         upload = requests.post("https://telegra.ph/upload/",
-                            files={"images-"+str(i+1):v for i, v in enumerate(imgs_raw)})
+                            files={f"images-{i}":v for i, v in enumerate(imgs)})
     except Exception as e:
+        traceback.print_exc()
         bot.edit_message_text(f"图片上传失败!\n{e}", chat_id=m.chat.id, message_id=m.message_id)
         return 
     
@@ -60,8 +63,10 @@ def handle_url(message):
                                    "content": json.dumps([{"tag": "img",
                                                            "attrs": {"src": f"https://telegra.ph{i['src']}"}} for i in upload.json()])})
     except Exception as e:
+        traceback.print_exc()
         bot.edit_message_text(f"生成文章失败!\n{e}", chat_id=m.chat.id, message_id=m.message_id)
         return 
+    
     if page.json()["ok"]:
         url = page.json()['result']['url']
         article = Article(title=title,
