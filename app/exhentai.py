@@ -46,7 +46,8 @@ class Exhentai(object):
         html = etree.HTML(web_source.content)
         title = html.xpath("//h1[@id='gn']")[0].text
         self.list = [a.attrib["href"] for a in html.xpath("//div[@class='gdtm']/div/a")]
-        if len(html.xpath("//table[@class='ptb']/tbody/tr/td")) > 3:
+        page_node = html.xpath("//table[@class='ptb']/tr/td")
+        if len(page_node) > 3:
             for p in range(1, int(page_node[-2][0].text)):
                 web_source = self.client.get(self.url + f"?p={p}", headers=self.headers)
                 html = etree.HTML(web_source.content)
