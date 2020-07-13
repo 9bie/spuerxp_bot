@@ -45,9 +45,11 @@ def handle_url(message):
         return 
     
     bot.edit_message_text(f"图片下载成功，正在上传...", chat_id=m.chat.id, message_id=m.message_id)
+    upload = []
     try:
-        upload = requests.post("https://telegra.ph/upload/",
-                            files={f"images-{i}":v for i, v in enumerate(imgs)})
+        for i in imgs:
+            upload.append(requests.post("https://telegra.ph/upload/",
+                                        files={"image": i}).json()[0]["src"])
     except Exception as e:
         traceback.print_exc()
         bot.edit_message_text(f"图片上传失败!\n{e}", chat_id=m.chat.id, message_id=m.message_id)
@@ -61,7 +63,7 @@ def handle_url(message):
                                    "author_name": config.AURHOR_NAME,
                                    "author_url ": config.AUTHOR_URL,
                                    "content": json.dumps([{"tag": "img",
-                                                           "attrs": {"src": f"https://telegra.ph{i['src']}"}} for i in upload.json()])})
+                                                           "attrs": {"src": f"https://telegra.ph{i}"}} for i in upload])})
     except Exception as e:
         traceback.print_exc()
         bot.edit_message_text(f"生成文章失败!\n{e}", chat_id=m.chat.id, message_id=m.message_id)
