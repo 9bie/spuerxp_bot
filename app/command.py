@@ -62,7 +62,7 @@ def handle_url(message):
             tmp = images.get()
             uploading.append(tmp)
             size += len(tmp)
-            if size >= 5 * 1024 * 1024 or images.empty():
+            if size >= config.UPLOAD_SIZE or images.empty():
                 uploaded += [i["src"] for i in requests.post("https://telegra.ph/upload/",
                                                              files={f"image-{i}": v for i, v in enumerate(uploading)}).json()]
                 uploading = []

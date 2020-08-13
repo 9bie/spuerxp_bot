@@ -13,3 +13,4 @@ DOWNLOAD_THREAD_NUMBER = 5
 AURHOR_NAME = os.environ.get("AURHOR_NAME", "XP百科全书")
 AUTHOR_URL = os.environ.get("AUTHOR_URL", "https://t.me/superxp")
 PH_TOKEN = os.environ.get("PH_TOKEN", "<THIS IS YOUR TELEGRA.PH COOKIES>")
+UPLOAD_SIZE = 20 * 1024 * 1024
