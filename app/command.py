@@ -3,6 +3,7 @@ import os
 import re
 import json
 import traceback
+from queue import Queue
 import requests
 from telebot import types
 from . import bot, config
@@ -45,11 +46,28 @@ def handle_url(message):
         return 
     
     bot.edit_message_text(f"图片下载成功，正在上传...", chat_id=m.chat.id, message_id=m.message_id)
-    upload = []
+    uploaded = []
+    uploading = []
+    images = Queue()
+    size = 0
+    for i in imgs:
+        images.put(i)
     try:
+        """
         for i in imgs:
-            upload.append(requests.post("https://telegra.ph/upload/",
+            uploaded.append(requests.post("https://telegra.ph/upload/",
                                         files={"image": i}).json()[0]["src"])
+        """
+        while not images.empty():
+            tmp = images.get()
+            uploading.append(tmp)
+            size += len(tmp)
+            if size >= 5 * 1024 * 1024 or images.empty():
+                uploaded += [i["src"] for i in requests.post("https://telegra.ph/upload/",
+                                                             files={f"image-{i}": v for i, v in enumerate(uploading)}).json()]
+                uploading = []
+                size = 0
+                
     except Exception as e:
         traceback.print_exc()
         bot.edit_message_text(f"图片上传失败!\n{e}", chat_id=m.chat.id, message_id=m.message_id)
@@ -63,7 +81,7 @@ def handle_url(message):
                                    "author_name": config.AURHOR_NAME,
                                    "author_url ": config.AUTHOR_URL,
                                    "content": json.dumps([{"tag": "img",
-                                                           "attrs": {"src": f"https://telegra.ph{i}"}} for i in upload])})
+                                                           "attrs": {"src": f"https://telegra.ph{i}"}} for i in uploaded])})
     except Exception as e:
         traceback.print_exc()
         bot.edit_message_text(f"生成文章失败!\n{e}", chat_id=m.chat.id, message_id=m.message_id)
